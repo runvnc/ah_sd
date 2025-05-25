@@ -178,6 +178,9 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
         return images_fnames[0] if count == 1 and images_fnames else None # Simplified return for single image
     except Exception as e:
         trace = traceback.format_exc()
+        print(e)
+        print(trace)
+        sys.exit(1)
         raise Error(f"Error generating image: {e}\nTraceback:\n{trace}")
 
 @command()
@@ -210,10 +213,12 @@ async def image(prompt: str, negative_prompt: str = "",
       }
     }
     """
+    print('image command called with prompt:', prompt, 'negative_prompt:', negative_prompt )
     fname = await text_to_image(prompt=prompt, negative_prompt=negative_prompt,
                                 model_id=None, from_huggingface_flag=None, is_sdxl_flag=None, 
                                 w=w, h=h, steps=steps, cfg=cfg, context=context)
-    
+    print("Image generation completed, filename:", fname)
+    sys.exit(1)
     if fname and isinstance(fname, str):
         print(f"Image command output to file: {fname}")
         if hasattr(context, 'insert_image'):
