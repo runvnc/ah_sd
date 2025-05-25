@@ -110,7 +110,9 @@ async def warmup(context: Optional[Any] = None):
             print("Disabling safety checker for HuggingFace model.")
             pipeline.safety_checker = lambda images, **kwargs: (images, [False]*len(images))
     except Exception as e:
-        print(f"Error during pipeline initialization: {e}", file=sys.stderr)
+        trace = traceback.format_exc()
+        print(f"Error during pipeline initialization: {e} {trace}", file=sys.stderr)
+        sys.exit(1)
         pipeline = None
 
 @service()
