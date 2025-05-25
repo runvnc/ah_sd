@@ -89,7 +89,7 @@ async def warmup(context: Optional[Any] = None):
     try:
         if True or use_sdxl:
             print(f"Initializing StableDiffusionXLPipeline for {current_model}...")
-            pipeline = DiffusionPipeline.from_pretrained(
+            pipeline = DiffusionPipeline.from_single_file(
                 current_model, torch_dtype=torch.float16, safety_checker=None
             ).to("cuda")
 
@@ -218,7 +218,7 @@ async def image(prompt: str, negative_prompt: str = "",
                                 model_id=None, from_huggingface_flag=None, is_sdxl_flag=None, 
                                 w=w, h=h, steps=steps, cfg=cfg, context=context)
     print("Image generation completed, filename:", fname)
-    sys.exit(1)
+    #sys.exit(1)
     if fname and isinstance(fname, str):
         print(f"Image command output to file: {fname}")
         if hasattr(context, 'insert_image'):
