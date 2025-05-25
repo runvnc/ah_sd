@@ -1,0 +1,11 @@
+{
+  "name": "AH Stable Diffusion",
+  "version": "1.0.0",
+  "description": "Plugin for Stable Diffusion image generation using local or HuggingFace models.",
+  "services": [
+    "text_to_image"
+  ],
+  "commands": [
+    "image"
+  ]
+}

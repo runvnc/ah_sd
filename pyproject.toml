@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ah_sd"
+version = "1.0.0"
+description = "AH Stable Diffusion Plugin for MindRoot"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "torch",
+    "diffusers",
+    "nanoid",
+    "transformers",
+    "invisible-watermark",
+    "accelerate" # Often needed for diffusers
+]
