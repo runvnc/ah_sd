@@ -1,7 +1,6 @@
 import torch
 import sys
 import asyncio
-from diffusers import DiffusionPipeline
 from diffusers import StableDiffusionXLPipeline, StableDiffusionPipeline
 from nanoid import generate
 import os
@@ -86,16 +85,12 @@ async def warmup(context: Optional[Any] = None):
     print(f"Warmup: Initializing pipeline. Model: {current_model}, SDXL: {use_sdxl}, Local: {local_model}, HF: {from_huggingface}")
 
     try:
-        if True or use_sdxl:
+        if use_sdxl:
             print(f"Initializing StableDiffusionXLPipeline for {current_model}...")
-            pipeline = DiffusionPipeline.from_pretrained(
-                current_model, torch_dtype=torch.float16, safety_checker=None
-            ).to(device)
-
-            #if not from_huggingface:
-            #   pipeline = StableDiffusionXLPipeline.from_single_file(current_model, torch_dtype=torch.float16, use_safetensors=True if current_model.endswith('.safetensors') else False)
-            #else:
-            #    pipeline = StableDiffusionXLPipeline.from_pretrained(current_model, torch_dtype=torch.float16, use_safetensors=True)
+            if not from_huggingface:
+                pipeline = StableDiffusionXLPipeline.from_single_file(current_model, torch_dtype=torch.float16, use_safetensors=True if current_model.endswith('.safetensors') else False)
+            else:
+                pipeline = StableDiffusionXLPipeline.from_pretrained(current_model, torch_dtype=torch.float16, use_safetensors=True)
         else:
             print(f"Initializing StableDiffusionPipeline for {current_model}...")
             if not from_huggingface:
@@ -140,12 +135,6 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
             return None
 
     images_fnames = []
-    (
-    prompt_embeds,
-    negative_prompt_embeds,
-    pooled_prompt_embeds,
-    negative_pooled_prompt_embeds,
-    ) = pipeline.encode_prompt(prompt, device, num_images_per_prompt=num_images_per_prompt)
     for n in range(count):
         actual_w = w if w != 1024 else (1024 if use_sdxl else 512)
         actual_h = h if h != 1024 else (1024 if use_sdxl else 512)
@@ -158,8 +147,6 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
 
         image_obj = pipeline(prompt_embeds=prompt_embeds, negative_prompt_embeds=negative_prompt_embeds,
                              width=actual_w, height=actual_h,
-                             pooled_prompt_embeds=pooled_prompt_embeds,
-                             negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
                              num_inference_steps=steps, guidance_scale=cfg).images[0]
         
         fname_to_save = save_to if save_to and count == 1 else random_img_fname()
