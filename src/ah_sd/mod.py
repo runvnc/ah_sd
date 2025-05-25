@@ -89,7 +89,7 @@ async def warmup(context: Optional[Any] = None):
     try:
         if True or use_sdxl:
             print(f"Initializing StableDiffusionXLPipeline for {current_model}...")
-            pipeline = DiffusionPipeline.from_single_file(
+            pipeline = DiffusionPipeline.from_pretrained(
                 current_model, torch_dtype=torch.float16, safety_checker=None
             ).to("cuda")
 
