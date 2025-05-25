@@ -90,7 +90,7 @@ async def warmup(context: Optional[Any] = None):
         if True or use_sdxl:
             print(f"Initializing StableDiffusionXLPipeline for {current_model}...")
             pipeline = DiffusionPipeline.from_pretrained(
-                current_model, torch_dtype=torch.float16, safety_checker=None
+                current_model, torch_dtype=torch.float16, variant="fp16"
             ).to("cuda")
 
             #if not from_huggingface:
@@ -154,10 +154,8 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
         print(pipeline)
         print("count = ", count)
         for n in range(count):
-            actual_w = w if w != 1024 else (1024 if use_sdxl else 512)
-            actual_h = h if h != 1024 else (1024 if use_sdxl else 512)
-            if w != 1024 : actual_w = w # If user specified w, use it
-            if h != 1024 : actual_h = h # If user specified h, use it
+            actual_w = w
+            actual_h = h
 
             print(f"Generating image {n+1}/{count} with prompt: '{prompt[:50]}...' model: {current_model} SDXL: {use_sdxl} W: {actual_w} H: {actual_h}")
             
