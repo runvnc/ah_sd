@@ -21,7 +21,7 @@ if os.environ.get('AH_DEFAULT_SD_MODEL'):
     use_sdxl = True # Defaulting to True if model is local, can be overridden by AH_USE_SDXL
     from_huggingface = False
 else:
-    current_model = 'stabilityai/stable-diffusion-xl-base-1.0' # Defaulting to a common SDXL model
+    current_model = 'stabilityai/stable-diffusion-xl-base-1.0'
     local_model = False
     use_sdxl = True # Defaulting to SDXL for HuggingFace
     from_huggingface = True
@@ -103,7 +103,6 @@ async def warmup(context: Optional[Any] = None):
             else:
                 pipeline = StableDiffusionPipeline.from_pretrained(current_model, torch_dtype=torch.float16, use_safetensors=True)
         
-        pipeline = pipeline.to("cuda")
         print(f"Pipeline for {current_model} loaded to CUDA.")
 
         if not local_model and hasattr(pipeline, 'safety_checker') and pipeline.safety_checker is not None:
