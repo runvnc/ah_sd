@@ -122,7 +122,7 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
                         w: int = 1024, h: int = 1024, 
                         steps: int = 20, cfg: float = 8.0) -> Optional[str]: # Updated signature
     global pipeline, current_model, use_sdxl, local_model, from_huggingface # Ensure all relevant globals are accessible
-
+    print('text to image')
     if model_id is not None:
         is_local_model_request = not from_huggingface_flag if from_huggingface_flag is not None else not model_id.startswith('http') # Basic inference
         if model_id != current_model or \
@@ -131,13 +131,15 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
             print(f"Model change requested by service. New model: {model_id}, Current: {current_model}, New SDXL: {is_sdxl_flag}, Current SDXL: {use_sdxl}")
             use_model(model_id, local=is_local_model_request, is_sdxl=is_sdxl_flag)
     
+    print("A.")
     if pipeline is None:
         print("Pipeline not initialized. Calling warmup...")
         await warmup(context=context)
         if pipeline is None:
             print("Pipeline initialization failed. Cannot generate image.", file=sys.stderr)
             return None
-
+    else:
+        print("pipeline already initialized?")
     images_fnames = []
     (
     prompt_embeds,
@@ -145,6 +147,9 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
     pooled_prompt_embeds,
     negative_pooled_prompt_embeds,
     ) = pipeline.encode_prompt(prompt, "cuda", num_images_per_prompt=1, negative_prompt=negative_prompt)
+    print("encoded prompt?")
+    print(pipeline)
+    print("count = ", count)
     for n in range(count):
         actual_w = w if w != 1024 else (1024 if use_sdxl else 512)
         actual_h = h if h != 1024 else (1024 if use_sdxl else 512)
@@ -153,8 +158,6 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
 
         print(f"Generating image {n+1}/{count} with prompt: '{prompt[:50]}...' model: {current_model} SDXL: {use_sdxl} W: {actual_w} H: {actual_h}")
         
-        prompt_embeds, negative_prompt_embeds = get_pipeline_embeds(pipeline, prompt, negative_prompt, "cuda")
-
         image_obj = pipeline(prompt_embeds=prompt_embeds, negative_prompt_embeds=negative_prompt_embeds,
                              width=actual_w, height=actual_h,
                              pooled_prompt_embeds=pooled_prompt_embeds,
