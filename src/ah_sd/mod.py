@@ -105,7 +105,7 @@ async def warmup(context: Optional[Any] = None):
                 pipeline = StableDiffusionPipeline.from_pretrained(current_model, torch_dtype=torch.float16, use_safetensors=True)
         
         print(f"Pipeline for {current_model} loaded to CUDA.")
-
+        sys.exit(1)
         if not local_model and hasattr(pipeline, 'safety_checker') and pipeline.safety_checker is not None:
             print("Disabling safety checker for HuggingFace model.")
             pipeline.safety_checker = lambda images, **kwargs: (images, [False]*len(images))
