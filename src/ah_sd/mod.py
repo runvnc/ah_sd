@@ -145,7 +145,7 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
     negative_prompt_embeds,
     pooled_prompt_embeds,
     negative_pooled_prompt_embeds,
-    ) = pipeline.encode_prompt(prompt, device, num_images_per_prompt=num_images_per_prompt)
+    ) = pipeline.encode_prompt(prompt, "cuda", num_images_per_prompt=num_images_per_prompt, negative_prompt=negative_prompt)
     for n in range(count):
         actual_w = w if w != 1024 else (1024 if use_sdxl else 512)
         actual_h = h if h != 1024 else (1024 if use_sdxl else 512)
