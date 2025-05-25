@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any, List # Added
 # Updated imports for MindRoot plugin system
 from lib.providers.commands import command
 from lib.providers.services import service
-from lib.hooks import hook # Assuming this is the correct path for @hook
+from lib.providers.hooks import hook # Assuming this is the correct path for @hook
 
 pipeline = None
 
