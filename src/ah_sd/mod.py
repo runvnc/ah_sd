@@ -6,6 +6,7 @@ from diffusers import StableDiffusionXLPipeline, StableDiffusionPipeline
 from nanoid import generate
 import os
 from typing import Optional, Dict, Any, List # Added
+import traceback
 
 # Updated imports for MindRoot plugin system
 from lib.providers.commands import command
@@ -122,59 +123,62 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
                         w: int = 1024, h: int = 1024, 
                         steps: int = 20, cfg: float = 8.0) -> Optional[str]: # Updated signature
     global pipeline, current_model, use_sdxl, local_model, from_huggingface # Ensure all relevant globals are accessible
-    print('text to image')
-    if model_id is not None:
-        is_local_model_request = not from_huggingface_flag if from_huggingface_flag is not None else not model_id.startswith('http') # Basic inference
-        if model_id != current_model or \
-           (is_sdxl_flag is not None and is_sdxl_flag != use_sdxl) or \
-           (is_local_model_request != local_model):
-            print(f"Model change requested by service. New model: {model_id}, Current: {current_model}, New SDXL: {is_sdxl_flag}, Current SDXL: {use_sdxl}")
-            use_model(model_id, local=is_local_model_request, is_sdxl=is_sdxl_flag)
-    
-    print("A.")
-    if pipeline is None:
-        print("Pipeline not initialized. Calling warmup...")
-        await warmup(context=context)
+    try:
+        print('text to image')
+        if model_id is not None:
+            is_local_model_request = not from_huggingface_flag if from_huggingface_flag is not None else not model_id.startswith('http') # Basic inference
+            if model_id != current_model or \
+            (is_sdxl_flag is not None and is_sdxl_flag != use_sdxl) or \
+            (is_local_model_request != local_model):
+                print(f"Model change requested by service. New model: {model_id}, Current: {current_model}, New SDXL: {is_sdxl_flag}, Current SDXL: {use_sdxl}")
+                use_model(model_id, local=is_local_model_request, is_sdxl=is_sdxl_flag)
+        
+        print("A.")
         if pipeline is None:
-            print("Pipeline initialization failed. Cannot generate image.", file=sys.stderr)
-            return None
-    else:
-        print("pipeline already initialized?")
-    images_fnames = []
-    (
-    prompt_embeds,
-    negative_prompt_embeds,
-    pooled_prompt_embeds,
-    negative_pooled_prompt_embeds,
-    ) = pipeline.encode_prompt(prompt, "cuda", num_images_per_prompt=1, negative_prompt=negative_prompt)
-    print("encoded prompt?")
-    print(pipeline)
-    print("count = ", count)
-    for n in range(count):
-        actual_w = w if w != 1024 else (1024 if use_sdxl else 512)
-        actual_h = h if h != 1024 else (1024 if use_sdxl else 512)
-        if w != 1024 : actual_w = w # If user specified w, use it
-        if h != 1024 : actual_h = h # If user specified h, use it
+            print("Pipeline not initialized. Calling warmup...")
+            await warmup(context=context)
+            if pipeline is None:
+                print("Pipeline initialization failed. Cannot generate image.", file=sys.stderr)
+                return None
+        else:
+            print("pipeline already initialized?")
+        images_fnames = []
+        (
+        prompt_embeds,
+        negative_prompt_embeds,
+        pooled_prompt_embeds,
+        negative_pooled_prompt_embeds,
+        ) = pipeline.encode_prompt(prompt, "cuda", num_images_per_prompt=1, negative_prompt=negative_prompt)
+        print("encoded prompt?")
+        print(pipeline)
+        print("count = ", count)
+        for n in range(count):
+            actual_w = w if w != 1024 else (1024 if use_sdxl else 512)
+            actual_h = h if h != 1024 else (1024 if use_sdxl else 512)
+            if w != 1024 : actual_w = w # If user specified w, use it
+            if h != 1024 : actual_h = h # If user specified h, use it
 
-        print(f"Generating image {n+1}/{count} with prompt: '{prompt[:50]}...' model: {current_model} SDXL: {use_sdxl} W: {actual_w} H: {actual_h}")
-        
-        image_obj = pipeline(prompt_embeds=prompt_embeds, negative_prompt_embeds=negative_prompt_embeds,
-                             width=actual_w, height=actual_h,
-                             pooled_prompt_embeds=pooled_prompt_embeds,
-                             negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
-                             num_inference_steps=steps, guidance_scale=cfg).images[0]
-        
-        fname_to_save = save_to if save_to and count == 1 else random_img_fname()
-        
-        try:
-            image_obj.save(fname_to_save)
-            print(f"Image saved to {fname_to_save}")
-            images_fnames.append(fname_to_save)
-        except Exception as e:
-            print(f"Error saving image to {fname_to_save}: {e}", file=sys.stderr)
+            print(f"Generating image {n+1}/{count} with prompt: '{prompt[:50]}...' model: {current_model} SDXL: {use_sdxl} W: {actual_w} H: {actual_h}")
+            
+            image_obj = pipeline(prompt_embeds=prompt_embeds, negative_prompt_embeds=negative_prompt_embeds,
+                                width=actual_w, height=actual_h,
+                                pooled_prompt_embeds=pooled_prompt_embeds,
+                                negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
+                                num_inference_steps=steps, guidance_scale=cfg).images[0]
+            
+            fname_to_save = save_to if save_to and count == 1 else random_img_fname()
+            
+            try:
+                image_obj.save(fname_to_save)
+                print(f"Image saved to {fname_to_save}")
+                images_fnames.append(fname_to_save)
+            except Exception as e:
+                print(f"Error saving image to {fname_to_save}: {e}", file=sys.stderr)
 
-    return images_fnames[0] if count == 1 and images_fnames else None # Simplified return for single image
-
+        return images_fnames[0] if count == 1 and images_fnames else None # Simplified return for single image
+    except Exception as e:
+        trace = traceback.format_exc()
+        raise Error(f"Error generating image: {e}\nTraceback:\n{trace}")
 
 @command()
 async def image(prompt: str, negative_prompt: str = "", 
