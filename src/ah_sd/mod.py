@@ -17,10 +17,10 @@ pipeline = None
 
 # Global model configuration, typically set by environment variables via warmup
 if os.environ.get('AH_DEFAULT_SD_MODEL'):
-    current_model = 'models/' + os.environ.get('AH_DEFAULT_SD_MODEL')
-    local_model = True
+    current_model = os.environ.get('AH_DEFAULT_SD_MODEL')
+    local_model = False
     use_sdxl = True # Defaulting to True if model is local, can be overridden by AH_USE_SDXL
-    from_huggingface = False
+    from_huggingface = True
 else:
     current_model = 'stabilityai/stable-diffusion-xl-base-1.0'
     local_model = False
