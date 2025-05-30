@@ -82,7 +82,7 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
                         save_to: Optional[str] = None, 
                         w: int = 1024, h: int = 1024, 
                         steps: int = 20, cfg: float = 8.0,
-                        seed: int = 12345) -> Optional[List[str]]:
+                        seed: int = 12345) -> Optional[str]:
     global pipeline, current_model, local_model, from_huggingface
     try:
         print('text_to_image service called (SDXL only)')
@@ -137,7 +137,8 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
             except Exception as e:
                 print(f"Error saving image to {fname_to_save}: {e}", file=sys.stderr)
 
-        return images_fnames if images_fnames else None
+        # Return the first image filename to match expected interface
+        return images_fnames[0] if images_fnames else None
     except Exception as e:
         trace = traceback.format_exc()
         print(f"Error in text_to_image: {e}\n{trace}", file=sys.stderr)
@@ -183,8 +184,8 @@ async def image(prompt: str, negative_prompt: str = "",
                                 model_id=None, from_huggingface_flag=None, 
                                 w=w, h=h, steps=steps, cfg=cfg, seed=seed, context=context)
     
-    if fnames and isinstance(fnames, list) and len(fnames) > 0:
-        fname = fnames[0] # For now, command handles the first image if multiple were made by service
+    if fnames and isinstance(fnames, str):
+        fname = fnames
         print(f"Image command output to file: {fname}")
         if hasattr(context, 'insert_image'):
             img_filename = os.path.basename(fname)
