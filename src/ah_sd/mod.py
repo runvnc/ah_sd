@@ -1,6 +1,7 @@
 import torch
 import sys
 import asyncio
+import random
 from diffusers import DiffusionPipeline
 from diffusers import StableDiffusionXLPipeline # Only SDXL needed
 from nanoid import generate
@@ -80,7 +81,8 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
                         count: int = 1, context: Optional[Any] = None, 
                         save_to: Optional[str] = None, 
                         w: int = 1024, h: int = 1024, 
-                        steps: int = 20, cfg: float = 8.0) -> Optional[List[str]]:
+                        steps: int = 20, cfg: float = 8.0,
+                        seed: int = 12345) -> Optional[List[str]]:
     global pipeline, current_model, local_model, from_huggingface
     try:
         print('text_to_image service called (SDXL only)')
@@ -98,6 +100,12 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
                 return None
 
         images_fnames = []
+        
+        # Handle seed: -1 means random, otherwise use specified seed
+        actual_seed = random.randint(0, 2**32 - 1) if seed == -1 else seed
+        generator = torch.Generator(device="cuda").manual_seed(actual_seed)
+        print(f"Using seed: {actual_seed}")
+        
         (
         prompt_embeds,
         negative_prompt_embeds,
@@ -117,7 +125,8 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
                                 width=actual_w, height=actual_h,
                                 pooled_prompt_embeds=pooled_prompt_embeds,
                                 negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
-                                num_inference_steps=steps, guidance_scale=cfg).images[0]
+                                num_inference_steps=steps, guidance_scale=cfg,
+                                generator=generator).images[0]
             
             fname_to_save = save_to if save_to and count == 1 else random_img_fname()
             
@@ -138,7 +147,8 @@ async def text_to_image(prompt: str, negative_prompt: str = '',
 @command()
 async def image(prompt: str, negative_prompt: str = "", 
                 steps: int = 20, cfg: float = 8.0, 
-                w: int = 1024, h: int = 1024, 
+                w: int = 1024, h: int = 1024,
+                seed: int = 12345,
                 context: Optional[Any] = None) -> Optional[Dict[str, str]]: # Updated signature
     """image: Generate an image from a prompt using the currently configured model.
     This plugin is configured for SDXL models only. Default size is 1024x1024.
@@ -150,6 +160,7 @@ async def image(prompt: str, negative_prompt: str = "",
         cfg (float, optional): Classifier-Free Guidance scale. Defaults to 8.0.
         w (int, optional): Width of the generated image. Defaults to 1024.
         h (int, optional): Height of the generated image. Defaults to 1024.
+        seed (int, optional): Random seed for generation. Use -1 for random seed. Defaults to 12345.
         context (Optional[Any]): The execution context.
 
     Example:
@@ -161,6 +172,7 @@ async def image(prompt: str, negative_prompt: str = "",
         "negative_prompt": "ugly, blurry, cars", 
         "w": 768, 
         "h": 768,
+        "seed": 42,
         "steps": 25,
         "cfg": 7.0
       }
@@ -169,7 +181,7 @@ async def image(prompt: str, negative_prompt: str = "",
     print(f'image command (SDXL only) called with prompt: "{prompt[:50]}..." negative_prompt: "{negative_prompt[:50]}..."')
     fnames = await text_to_image(prompt=prompt, negative_prompt=negative_prompt,
                                 model_id=None, from_huggingface_flag=None, 
-                                w=w, h=h, steps=steps, cfg=cfg, context=context)
+                                w=w, h=h, steps=steps, cfg=cfg, seed=seed, context=context)
     
     if fnames and isinstance(fnames, list) and len(fnames) > 0:
         fname = fnames[0] # For now, command handles the first image if multiple were made by service
